@@ -1,9 +1,10 @@
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Leaf, LogOut } from "lucide-react";
-import { mockOffertes } from "@/data/mockOffertes";
+import { supabase } from "@/lib/supabase";
 import {
   Table,
   TableBody,
@@ -13,35 +14,80 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const statusColor = (status: string) => {
+interface OfferteItem {
+  product: string;
+  hoeveelheid: number;
+  eenheid: string;
+  prijs_per_eenheid: number;
+  totaal: number;
+}
+
+interface Offerte {
+  offerte_id: string;
+  klant_naam: string;
+  klant_email: string;
+  status: string;
+  items: OfferteItem[];
+  subtotaal: number;
+  btw_bedrag: number;
+  totaal_incl_btw: number;
+  created_at: string;
+}
+
+const statusBadge = (status: string) => {
   switch (status) {
-    case "Goedgekeurd":
-      return "bg-emerald-100 text-emerald-800 border-emerald-200";
-    case "Verzonden":
-      return "bg-blue-100 text-blue-800 border-blue-200";
-    case "Concept":
-      return "bg-gray-100 text-gray-700 border-gray-200";
-    case "Afgewezen":
-      return "bg-red-100 text-red-800 border-red-200";
-    case "Verlopen":
-      return "bg-amber-100 text-amber-800 border-amber-200";
+    case "wacht_op_goedkeuring":
+      return { label: "In afwachting", className: "bg-amber-100 text-amber-800 border-amber-200" };
+    case "verstuurd":
+      return { label: "Verstuurd", className: "bg-emerald-100 text-emerald-800 border-emerald-200" };
+    case "afgewezen":
+      return { label: "Afgewezen", className: "bg-red-100 text-red-800 border-red-200" };
     default:
-      return "bg-muted text-muted-foreground";
+      return { label: status, className: "bg-muted text-muted-foreground" };
   }
 };
 
 const formatCurrency = (val: number) =>
   `€${val.toLocaleString("nl-NL", { minimumFractionDigits: 2 })}`;
 
-const formatDate = (dateStr: string) => {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("nl-NL", { day: "2-digit", month: "2-digit", year: "numeric" });
-};
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString("nl-NL", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 export default function OfferteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const offerte = mockOffertes.find((o) => o.offerte_id === id);
+  const [offerte, setOfferte] = useState<Offerte | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { navigate("/login"); return; }
+
+      const { data } = await supabase
+        .from("offertes")
+        .select("*")
+        .eq("offerte_id", id)
+        .single();
+
+      setOfferte(data);
+      setLoading(false);
+    };
+    load();
+  }, [id, navigate]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Laden…</p>
+      </div>
+    );
+  }
 
   if (!offerte) {
     return (
@@ -56,9 +102,10 @@ export default function OfferteDetail() {
     );
   }
 
+  const badge = statusBadge(offerte.status);
+
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
       <header className="h-14 flex items-center justify-between border-b bg-card px-6">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -66,18 +113,12 @@ export default function OfferteDetail() {
           </div>
           <span className="font-display text-lg">SmartQuote</span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/login")}
-          className="text-muted-foreground"
-        >
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
           <LogOut className="mr-1.5 h-4 w-4" />
           Uitloggen
         </Button>
       </header>
 
-      {/* Content */}
       <main className="flex-1 p-6 max-w-4xl mx-auto w-full">
         <Button
           variant="ghost"
@@ -89,20 +130,16 @@ export default function OfferteDetail() {
           Terug naar overzicht
         </Button>
 
-        {/* Offerte info */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="font-display text-2xl">{offerte.offerte_id}</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {formatDate(offerte.created_at)}
-            </p>
+            <p className="text-muted-foreground text-sm mt-1">{formatDate(offerte.created_at)}</p>
           </div>
-          <Badge variant="outline" className={`text-sm px-3 py-1 ${statusColor(offerte.status)}`}>
-            {offerte.status}
+          <Badge variant="outline" className={`text-sm px-3 py-1 ${badge.className}`}>
+            {badge.label}
           </Badge>
         </div>
 
-        {/* Klant info */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Klantgegevens</CardTitle>
@@ -113,7 +150,6 @@ export default function OfferteDetail() {
           </CardContent>
         </Card>
 
-        {/* Items table */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Artikelen</CardTitle>
@@ -144,7 +180,6 @@ export default function OfferteDetail() {
           </CardContent>
         </Card>
 
-        {/* Totals */}
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-2 text-sm max-w-xs ml-auto">
@@ -153,7 +188,7 @@ export default function OfferteDetail() {
                 <span>{formatCurrency(offerte.subtotaal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">BTW (9%)</span>
+                <span className="text-muted-foreground">BTW</span>
                 <span>{formatCurrency(offerte.btw_bedrag)}</span>
               </div>
               <div className="flex justify-between border-t pt-2 font-semibold text-base">

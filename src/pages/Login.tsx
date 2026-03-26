@@ -5,15 +5,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Leaf } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Replace with Supabase auth
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Inloggen mislukt",
+        description: error.message,
+      });
+      setLoading(false);
+      return;
+    }
+
     navigate("/offertes");
   };
 
@@ -26,9 +43,7 @@ export default function Login() {
           </div>
           <div className="text-center space-y-1">
             <h1 className="font-display text-xl">SmartQuote</h1>
-            <p className="text-sm text-muted-foreground">
-              Offertes op één plek
-            </p>
+            <p className="text-sm text-muted-foreground">Offertes op één plek</p>
           </div>
         </CardHeader>
         <CardContent className="pt-2">
@@ -55,8 +70,8 @@ export default function Login() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
-              Inloggen
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Bezig met inloggen…" : "Inloggen"}
             </Button>
           </form>
         </CardContent>
