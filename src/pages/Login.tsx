@@ -25,9 +25,9 @@ export default function Login() {
             <Leaf className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="text-center space-y-1">
-            <h1 className="font-display text-xl">De Verse Markt</h1>
+            <h1 className="font-display text-xl">SmartQuote</h1>
             <p className="text-sm text-muted-foreground">
-              Log in op uw account
+              Offertes op één plek
             </p>
           </div>
         </CardHeader>
