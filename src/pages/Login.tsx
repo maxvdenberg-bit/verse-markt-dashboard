@@ -14,48 +14,45 @@ export default function Login() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Replace with Supabase auth
-    navigate("/");
+    navigate("/offertes");
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md border-0 shadow-xl">
-        <CardHeader className="items-center space-y-4 pb-2">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Leaf className="h-7 w-7 text-primary-foreground" />
+    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
+      <Card className="w-full max-w-sm border shadow-lg">
+        <CardHeader className="items-center space-y-3 pb-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+            <Leaf className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="text-center space-y-1">
-            <h1 className="font-display text-2xl">De Verse Markt</h1>
+            <h1 className="font-display text-xl">De Verse Markt</h1>
             <p className="text-sm text-muted-foreground">
-              Log in op uw groothandel dashboard
+              Log in op uw account
             </p>
           </div>
         </CardHeader>
-        <CardContent className="pt-4">
+        <CardContent className="pt-2">
           <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="email">E-mailadres</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="jan@deverseMarkt.nl"
+                placeholder="uw@email.nl"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Wachtwoord</Label>
-                <button type="button" className="text-xs text-primary hover:underline">
-                  Wachtwoord vergeten?
-                </button>
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Wachtwoord</Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </div>
             <Button type="submit" className="w-full">
